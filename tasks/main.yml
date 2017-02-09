@@ -1,0 +1,20 @@
+---
+- name: Install vagrant-hostmanager plugin
+  become: true
+  become_user: '{{ item }}'
+  command: >
+    vagrant plugin install vagrant-hostmanager
+    {{ (vagrant_hostmanager_version != 'latest')|ternary(' --plugin-version ' ~ vagrant_hostmanager_version, '') }}
+  with_items: '{{ vagrant_plugin_users }}'
+  changed_when: false
+
+- name: Manage vagrant-hostmanager sudoers file.
+  template:
+    dest: /etc/sudoers.d/vagrant-hostmanager
+    src: 'sudoers-{{ ansible_distribution }}.j2'
+    owner: root
+    group: root
+    mode: 0440
+    force: yes
+    validate: 'visudo -cf %s'
+  when: vagrant_manage_sudoers and vagrant_hostmanager_manage_sudoers

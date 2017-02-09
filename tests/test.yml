@@ -1,0 +1,20 @@
+---
+- hosts: localhost
+  remote_user: root
+
+  vars:
+    # Test editing of sudoers file
+    vagrant_manage_sudoers: true
+    vagrant_hostmanager_manage_sudoers: true
+
+    # Test with specific version
+    vagrant_plugin_users: ['{{ ansible_user }}']
+    vagrant_hostmanager_version: '1.8.4'
+
+  pre_tasks:
+    - name: Update apt cache.
+      apt: update_cache=yes cache_valid_time=600
+      when: ansible_distribution == 'Ubuntu'
+
+  roles:
+    - role_under_test

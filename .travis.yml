@@ -1,0 +1,47 @@
+---
+services: docker
+
+branches:
+  only:
+    - master
+    - /^test\/.*$/
+
+env:
+  - distro: ubuntu1604
+    init: /lib/systemd/systemd
+    run_opts: "--privileged --volume=/sys/fs/cgroup:/sys/fs/cgroup:ro"
+
+before_install:
+  # Pull container.
+  - 'docker pull geerlingguy/docker-${distro}-ansible:latest'
+
+script:
+  - container_id=$(mktemp)
+  # Run container in detached state.
+  - 'docker run --detach --volume="${PWD}":/etc/ansible/roles/role_under_test:ro ${run_opts} geerlingguy/docker-${distro}-ansible:latest "${init}" > "${container_id}"'
+
+  # Install dependencies.
+  - 'docker exec "$(cat ${container_id})" ansible-galaxy install -r /etc/ansible/roles/role_under_test/tests/requirements.yml'
+
+  # Ansible syntax check.
+  - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm ansible-playbook /etc/ansible/roles/role_under_test/tests/test.yml --syntax-check'
+
+  # Test role.
+  - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm ansible-playbook /etc/ansible/roles/role_under_test/tests/test.yml'
+
+  # Test role idempotence.
+  - idempotence=$(mktemp)
+  - docker exec "$(cat ${container_id})" ansible-playbook /etc/ansible/roles/role_under_test/tests/test.yml | tee -a ${idempotence}
+  - >
+    tail ${idempotence}
+    | grep -q 'changed=0.*failed=0'
+    && (echo 'Idempotence test: pass' && exit 0)
+    || (echo 'Idempotence test: fail' && exit 1)
+
+notifications:
+  webhooks: https://galaxy.ansible.com/api/v1/notifications/
+  slack:
+    rooms:
+      secure: VlmWQBRBSiq0ht/EfDPECBcB7jJj7igCyLPqzHyE4EnHClJCdMxsHkZ5wMeYEdq6iK/Vb0phg5uGx8zGdMouHDQvSc0j9xIkA3gLjEePdwaJjxn0MIjkeS0W7ZQSfNgUF6yJ3jDey+6f18hvv2zl7MbnhjGiRecZQzU3xgNVNKtfdUXlzIFew5MoC96TFkEfJMVlEzuU590m63fVsFc+A0DLVG2IEAKbchSOZz/oirHxOv1V2vv0DEkWageDO3tfkhBvv9UUQxJeYu9DP4b/ofLUtV1zOfNEr4iojCuD1g9sEdWom3KlvgNO33iGK+Np/sxSTFjAI8aVVtzg/KqSYw3PwKWUzg8n1doYio4A2nxB67X0auXdDnv+9VMTSMctUzGEQisBAilWP7P3vlassBV2BNjk0Qn+P/DEvlnwzajzFhgM0CZxY/008vZN3KTFMLIJ8SvHmL8T3VyQ4OSvJ1u5UNgpgxfwD/7qG/uL7rbiF/clZ6/Eb1FnlWpYWBdU7whacPRhPQaP1l9S5UE6iaWLrZ/UZGLe9/9jZ4mQ40/icOhwXQPTyooOkRWHL/z70yNwR4PTnsaejMKbilAVNqv0pO5/i5prfnHtIVGQtjU66db6KAZobJ/L8pHc8vmwyoXoZETMPHL131b8p+6ULvFUo6Lzxcj4eRDZeKTifwE=
+    on_success: change
+    on_failure: always

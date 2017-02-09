@@ -1,0 +1,4 @@
+{% for user in vagrant_plugin_users %}
+Cmnd_Alias VAGRANT_HOSTMANAGER_UPDATE_{{ user|upper }} = /bin/cp /home/{{ user }}/.vagrant.d/tmp/hosts.local /etc/hosts
+%sudo ALL=(root) NOPASSWD: VAGRANT_HOSTMANAGER_UPDATE_{{ user|upper }}
+{% endfor %}
