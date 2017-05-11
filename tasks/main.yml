@@ -4,9 +4,18 @@
   become_user: '{{ item }}'
   command: >
     vagrant plugin install vagrant-hostmanager
-    {{ (vagrant_hostmanager_version != 'latest')|ternary(' --plugin-version ' ~ vagrant_hostmanager_version, '') }}
+    {{ (vagrant_hostmanager_version and vagrant_hostmanager_version != 'latest')|ternary(' --plugin-version ' ~ vagrant_hostmanager_version, '') }}
   with_items: '{{ vagrant_plugin_users }}'
   changed_when: false
+
+- name: Ensure vagrant-hostmanager is updated (if configured)
+  become: true
+  become_user: '{{ item }}'
+  command: vagrant plugin update vagrant-hostmanager
+  when: (vagrant_plugins_keep_updated and vagrant_hostmanager_version == '') or vagrant_hostmanager_version == 'latest'
+  register: vagrant_plugin_hostmanager_update
+  changed_when: '"Updated" in vagrant_plugin_hostmanager_update.stdout'
+  with_items: '{{ vagrant_plugin_users }}'
 
 - name: Manage vagrant-hostmanager sudoers file.
   template:
