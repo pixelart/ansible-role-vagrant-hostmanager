@@ -6,15 +6,15 @@ Installs the [Vagrant Host Manager](https://github.com/devopsgroup-io/vagrant-ho
 
 ## Requirements
 
-  - `pixelart.vagrant` which installs Vagrant itself
+  - `pixelart.vagrant` >=1.3.0
 
 ## Role Variables
 
 Available variables are listed below, along with default values (see `defaults/main.yml`):
 
-    vagrant_hostmanager_version: 'latest'
+    vagrant_hostmanager_version: ''
     
-The expected version of the plugin, either `latest` or a specific version.
+An optional version constraint of the plugin, or empty. Same functionality as the `version` key in `pixelart.vagrant`.
 
     vagrant_hostmanager_manage_sudoers: false
 
@@ -33,6 +33,10 @@ The `vagrant-hostmanager` should not be listed here anymore.
     vagrant_manage_sudoers: false
     
 Must be set to true if you want to use the `vagrant_hostmanager_manage_sudoers`.
+
+    vagrant_plugins_keep_updated: false
+    
+Must be set to true, if you want the plugin to be updated.
 
 ## Dependencies
 

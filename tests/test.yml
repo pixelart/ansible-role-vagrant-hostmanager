@@ -10,6 +10,7 @@
     # Test with specific version
     vagrant_plugin_users: ['{{ ansible_user }}']
     vagrant_hostmanager_version: '1.8.4'
+    vagrant_plugins_keep_updated: true
 
   pre_tasks:
     - name: Update apt cache.
